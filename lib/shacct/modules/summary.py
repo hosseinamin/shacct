@@ -5,6 +5,9 @@ from decimal import Decimal
 import csv
 import os.path
 
+def money_as_dec(v):
+  return Decimal(v.replace(",", ""))
+
 def summary(until=None, section='DEFAULT'):
   result = {}
   def print_var(name, value):
@@ -31,7 +34,7 @@ def summary(until=None, section='DEFAULT'):
     for i in range(size):
       try:
         row = rows[i]
-        if len(row) < 9 or row[0].startswith("#"):
+        if len(row) < 8 or row[0].startswith("#"):
           continue
         row = map(lambda a: a.strip(), row)
         if until is not None:
@@ -42,12 +45,10 @@ def summary(until=None, section='DEFAULT'):
         setres("_count", "+=", Decimal(1), Decimal(0))
         if row[2] == 'conv':
           name = row[1]
-          src_storage = row[3]
-          src_asset = src_storage + "_" + row[4]
-          src_amount = Decimal(row[5])
-          dest_storage = row[6]
-          dest_asset = dest_storage + "_" + row[7]
-          dest_amount = Decimal(row[8])
+          src_asset = row[5]
+          src_amount = money_as_dec(row[3])
+          dest_asset = row[6]
+          dest_amount = money_as_dec(row[4])
           setres("%s, %s, recv" % (name, dest_asset), "+=", dest_amount, Decimal(0))
           setres("%s, %s, sent" % (name, src_asset), "+=", src_amount, Decimal(0))
           setres("%s, %s, sum" % (name, dest_asset), "+=", dest_amount, Decimal(0))
@@ -58,9 +59,8 @@ def summary(until=None, section='DEFAULT'):
           setres("_asset: %s, recv" % (dest_asset), "+=", dest_amount, Decimal(0))
         elif row[2] == 'push':
           name = row[1]
-          storage = row[6]
-          asset = storage + "_" + row[7]
-          amount = Decimal(row[8])
+          asset = row[5]
+          amount = money_as_dec(row[3])
           setres("%s, %s, recv" % (name, asset), "+=", amount, Decimal(0))
           setres("%s, %s, sum" % (name, asset), "+=", amount, Decimal(0))
           setres("_asset: %s, recv" % (asset), "+=", amount, Decimal(0))
@@ -69,9 +69,8 @@ def summary(until=None, section='DEFAULT'):
           #setres("_asset: %s, pushed" % (asset), "+=", amount, Decimal(0))
         elif row[2] == 'pull':
           name = row[1]
-          storage = row[6]
-          asset = storage + "_" + row[7]
-          amount = Decimal(row[8])
+          asset = row[5]
+          amount = money_as_dec(row[3])
           setres("%s, %s, sent" % (name, asset), "+=", amount, Decimal(0))
           setres("%s, %s, sum" % (name, asset), "-=", amount, Decimal(0))
           setres("_asset: %s, sent" % (asset), "+=", amount, Decimal(0))
