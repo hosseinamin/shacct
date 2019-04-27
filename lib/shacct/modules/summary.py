@@ -4,14 +4,13 @@ from shacct import config
 from decimal import Decimal
 import csv
 import os.path
+from util import money_as_dec, moneyfmt
 
-def money_as_dec(v):
-  return Decimal(v.replace(",", ""))
-
-def summary(until=None, section='DEFAULT'):
+def summary(history=None, until=None, section='DEFAULT'):
   result = {}
   def print_var(name, value):
-    print("%s = %s" % (name, value))
+    is_btc = name.lower().endswith('btc')
+    print("%s = %s" % (name, moneyfmt(value, 8 if is_btc else 2)))
   def setres(name, op, inp, default):
     if name not in result:
       result[name] = default
@@ -26,7 +25,9 @@ def summary(until=None, section='DEFAULT'):
     else:
       raise AssertionError("unknown op")
     return result[name]
-  with open(os.path.join(config.evalpath(config[section]['path']), "history"), 'r') as f:
+  if history is None:
+    history = os.path.join(config.evalpath(config[section]['path']), "history")
+  with open(history, 'r') as f:
     rows = list(csv.reader(f, delimiter='|'))
     rows.reverse()
     bafeq = False
@@ -49,32 +50,32 @@ def summary(until=None, section='DEFAULT'):
           src_amount = money_as_dec(row[3])
           dest_asset = row[6]
           dest_amount = money_as_dec(row[4])
-          setres("%s, %s, recv" % (name, dest_asset), "+=", dest_amount, Decimal(0))
-          setres("%s, %s, sent" % (name, src_asset), "+=", src_amount, Decimal(0))
-          setres("%s, %s, sum" % (name, dest_asset), "+=", dest_amount, Decimal(0))
-          setres("%s, %s, sum" % (name, src_asset), "-=", src_amount, Decimal(0))
-          setres("_asset: %s, sum" % (src_asset), "-=", src_amount, Decimal(0))
-          setres("_asset: %s, sum" % (dest_asset), "+=", dest_amount, Decimal(0))
-          setres("_asset: %s, sent" % (src_asset), "+=", src_amount, Decimal(0))
-          setres("_asset: %s, recv" % (dest_asset), "+=", dest_amount, Decimal(0))
+          #setres("%s, recv, %s" % (name, dest_asset), "+=", dest_amount, Decimal(0))
+          #setres("%s, sent, %s" % (name, src_asset), "+=", src_amount, Decimal(0))
+          setres("%s, sum, %s" % (name, dest_asset), "+=", dest_amount, Decimal(0))
+          setres("%s, sum, %s" % (name, src_asset), "-=", src_amount, Decimal(0))
+          setres("_asset: sum, %s" % (src_asset), "-=", src_amount, Decimal(0))
+          setres("_asset: sum, %s" % (dest_asset), "+=", dest_amount, Decimal(0))
+          #setres("_asset: sent, %s" % (src_asset), "+=", src_amount, Decimal(0))
+          #setres("_asset: recv, %s" % (dest_asset), "+=", dest_amount, Decimal(0))
         elif row[2] == 'push':
           name = row[1]
           asset = row[5]
           amount = money_as_dec(row[3])
-          setres("%s, %s, recv" % (name, asset), "+=", amount, Decimal(0))
-          setres("%s, %s, sum" % (name, asset), "+=", amount, Decimal(0))
-          setres("_asset: %s, recv" % (asset), "+=", amount, Decimal(0))
-          setres("_asset: %s, sum" % (asset), "+=", amount, Decimal(0))
+          #setres("%s, recv, %s" % (name, asset), "+=", amount, Decimal(0))
+          setres("%s, sum, %s" % (name, asset), "+=", amount, Decimal(0))
+          #setres("_asset: recv, %s" % (asset), "+=", amount, Decimal(0))
+          setres("_asset: sum, %s" % (asset), "+=", amount, Decimal(0))
           #setres("%s, %s, pushed" % (name, asset), "+=", amount, Decimal(0))
           #setres("_asset: %s, pushed" % (asset), "+=", amount, Decimal(0))
         elif row[2] == 'pull':
           name = row[1]
           asset = row[5]
           amount = money_as_dec(row[3])
-          setres("%s, %s, sent" % (name, asset), "+=", amount, Decimal(0))
-          setres("%s, %s, sum" % (name, asset), "-=", amount, Decimal(0))
-          setres("_asset: %s, sent" % (asset), "+=", amount, Decimal(0))
-          setres("_asset: %s, sum" % (asset), "-=", amount, Decimal(0))
+          #setres("%s, sent, %s" % (name, asset), "+=", amount, Decimal(0))
+          setres("%s, sum, %s" % (name, asset), "-=", amount, Decimal(0))
+          #setres("_asset: sent, %s" % (asset), "+=", amount, Decimal(0))
+          setres("_asset: sum, %s" % (asset), "-=", amount, Decimal(0))
           #setres("%s, %s, pulled" % (name, asset), "+=", amount, Decimal(0))
           #setres("_asset: %s, pulled" % (asset), "+=", amount, Decimal(0))
         else:

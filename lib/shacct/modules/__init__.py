@@ -29,11 +29,11 @@ def eval_command_type_a(commands, default_command, args):
           nargs[arg_names.index(key) + min_alen] = opts[key]
         except ValueError:
           raise AssertionError("Unexpected option: %s!" % key)
-      func(*nargs)
+      args = nargs
     except ValueError:
       assert len(args) >= min_alen and len(args) <= max_alen, \
                    "Incorrect number of arguments!"
-      func(*args)
+    func(*args)
   try:
     func = commands[args[0]]
     call_func(func, args[1:])
